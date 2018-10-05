@@ -1,0 +1,30 @@
+From cb7aa685a2a2fd19e7408a9aac30f10f4ebf7ade Mon Sep 17 00:00:00 2001
+From: Jon Turney <jon.turney@dronecode.org.uk>
+Date: Fri, 5 Oct 2018 18:48:23 +0100
+Subject: [PATCH] Cross dlltool
+
+---
+ lib/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/Makefile b/lib/Makefile
+index 9711f75..da3b26c 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -113,11 +113,11 @@ libzstd.a-mt: libzstd.a
+ 
+ ifneq (,$(filter Windows%,$(OS)))
+ 
+-LIBZSTD = dll\libzstd.dll
++LIBZSTD = dll/libzstd.dll
+ $(LIBZSTD): $(ZSTD_FILES)
+ 	@echo compiling dynamic library $(LIBVER)
+ 	@$(CC) $(FLAGS) -DZSTD_DLL_EXPORT=1 -shared $^ -o $@
+-	dlltool -D $@ -d dll\libzstd.def -l dll\libzstd.lib
++	$(DLLTOOL) -D $@ -d dll/libzstd.def -l dll/libzstd.lib
+ 
+ else
+ 
+-- 
+2.5.5
+

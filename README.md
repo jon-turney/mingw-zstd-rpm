@@ -1,0 +1,1 @@
+<a href="https://copr.fedorainfracloud.org/coprs/jturney/mingw-zstd/package/mingw-zstd/"><img src="https://copr.fedorainfracloud.org/coprs/jturney/mingw-zstd/package/mingw-zstd/status_image/last_build.png" /></a>
