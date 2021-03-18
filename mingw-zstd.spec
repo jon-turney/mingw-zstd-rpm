@@ -23,6 +23,8 @@ BuildRequires:  mingw64-gcc
 BuildRequires:  mingw64-gcc-c++
 BuildRequires:  mingw64-binutils
 
+BuildRequires:  make
+
 %description
 Zstd, short for Zstandard, is a fast lossless compression algorithm,
 targeting real-time compression scenarios at zlib-level compression ratio.
