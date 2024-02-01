@@ -1,124 +1,158 @@
 %{?mingw_package_header}
 
-Name:           mingw-zstd
-Version:        1.3.6
-Release:        1%{?dist}
-Summary:        Cross-compiled Zstd compression library
+%global pkgname zstd
 
-License:        BSD and GPLv2
-URL:            https://github.com/facebook/zstd
-Source0:        https://github.com/facebook/zstd/archive/v%{version}.tar.gz
+Name:          mingw-%{pkgname}
+Version:       1.5.5
+Release:       6%{?dist}
+Summary:       MinGW Windows %{pkgname} library
 
-Patch0:         0001-Cross-dlltool.patch
+BuildArch:     noarch
+# BSD or GPLv2: Most files have a sentence that reads "You may select, at your option, one of the above-listed licenses"
+# MIT: lib/dictBuilder/divsufsort.{c,h}
+License:       (BSD or GPLv2) and MIT
+URL:           https://github.com/facebook/%{pkgname}
+Source0:       https://github.com/facebook/%{pkgname}/archive/v%{version}/%{pkgname}-%{version}.tar.gz
 
-BuildArch:      noarch
 
-BuildRequires:  mingw32-filesystem >= 95
-BuildRequires:  mingw32-gcc
-BuildRequires:  mingw32-gcc-c++
-BuildRequires:  mingw32-binutils
+BuildRequires: make
+BuildRequires: cmake
 
-BuildRequires:  mingw64-filesystem >= 95
-BuildRequires:  mingw64-gcc
-BuildRequires:  mingw64-gcc-c++
-BuildRequires:  mingw64-binutils
+BuildRequires: mingw32-filesystem >= 95
+BuildRequires: mingw32-gcc-c++
 
-BuildRequires:  make
+BuildRequires: mingw64-filesystem >= 95
+BuildRequires: mingw64-gcc-c++
+
 
 %description
-Zstd, short for Zstandard, is a fast lossless compression algorithm,
-targeting real-time compression scenarios at zlib-level compression ratio.
+MinGW Windows %{pkgname} library.
 
-# Win32
-%package -n mingw32-libzstd
-Summary:        MinGW libzstd
 
-%description -n mingw32-libzstd
-MinGW compiled libzstd for the Win32 target.
+%package -n mingw32-%{pkgname}
+Summary:       MinGW Windows %{pkgname} library
 
-%package -n mingw32-libzstd-static
-Summary:        MinGW libzstd (static)
-Group:          Development/Libraries
-Requires:       mingw32-libzstd = %{version}-%{release}
+%description -n mingw32-%{pkgname}
+%{summary}.
 
-%description -n mingw32-libzstd-static
-MingW compiled static libzstd for the Win32 target.
 
-# Win64
-%package -n mingw64-libzstd
-Summary:        MinGW libzstd
+%package -n mingw64-%{pkgname}
+Summary:       MinGW Windows %{pkgname} library
 
-%description -n mingw64-libzstd
-MinGW compiled libzstd for the Win64 target.
+%description -n mingw64-%{pkgname}
+%{summary}.
 
-%package -n mingw64-libzstd-static
-Summary:        MinGW libzstd (static)
-Group:          Development/Libraries
-Requires:       mingw64-libzstd = %{version}-%{release}
 
-%description -n mingw64-libzstd-static
-MingW compiled static libzstd for the Win64 target.
+%package -n mingw32-%{pkgname}-static
+Summary:       MinGW Windows %{pkgname} library (static)
+Requires:      mingw32-%{pkgname} = %{version}-%{release}
+
+%description -n mingw32-%{pkgname}-static
+%{summary}.
+
+
+%package -n mingw64-%{pkgname}-static
+Summary:       MinGW Windows %{pkgname} library (static)
+Requires:      mingw64-%{pkgname} = %{version}-%{release}
+
+%description -n mingw64-%{pkgname}-static
+%{summary}.
+
 
 %{?mingw_debug_package}
 
-%prep
-%autosetup -p1 -n zstd-%{version}
 
-# create two copies of the source folder as zstd doesn't support out of source builds
-mkdir ../build_win32
-mv * ../build_win32
-mv ../build_win32 .
-mkdir build_win64
-cp -Rp build_win32/* build_win64
+%prep
+%autosetup -p1 -n %{pkgname}-%{version}
+
 
 %build
-# how not to cross-compile things...
-export OS="Windows_NT"
-export MOREFLAGS="-fno-pic"
+MINGW32_CMAKE_ARGS="-DCMAKE_INSTALL_INCLUDEDIR=%{mingw32_includedir}/%{pkgname}" \
+MINGW64_CMAKE_ARGS="-DCMAKE_INSTALL_INCLUDEDIR=%{mingw64_includedir}/%{pkgname}" \
+%mingw_cmake -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_BUILD_STATIC=ON ../build/cmake/
+%mingw_make_build
 
-pushd build_win32
-make -C lib PREFIX=%{mingw32_prefix} CC=%{mingw32_cc} DLLTOOL=/usr/%{mingw32_target}/bin/dlltool
-popd
-
-pushd build_win64
-make -C lib PREFIX=%{mingw64_prefix} CC=%{mingw64_cc} DLLTOOL=/usr/%{mingw64_target}/bin/dlltool
-popd
 
 %install
-export OS="Windows_NT"
+%mingw_make_install
 
-pushd build_win32
-make -C lib install PREFIX=%{mingw32_prefix} CC=%{mingw32_cc} DLLTOOL=/usr/%{mingw32_target}/bin/dlltool DESTDIR=$RPM_BUILD_ROOT
-mkdir $RPM_BUILD_ROOT%{mingw32_prefix}/bin/
-mv $RPM_BUILD_ROOT%{mingw32_prefix}/lib/*.dll $RPM_BUILD_ROOT%{mingw32_prefix}/bin/
-cp lib/dll/libzstd.lib $RPM_BUILD_ROOT%{mingw32_prefix}/lib/libzstd.dll.a
-rm $RPM_BUILD_ROOT%{mingw32_prefix}/lib/libzstd.so $RPM_BUILD_ROOT%{mingw32_prefix}/lib/libzstd.so.1
-popd
 
-pushd build_win64
-make -C lib install PREFIX=%{mingw64_prefix} CC=%{mingw64_cc} DLLTOOL=/usr/%{mingw64_target}/bin/dlltool DESTDIR=$RPM_BUILD_ROOT
-mkdir $RPM_BUILD_ROOT%{mingw64_prefix}/bin/
-mv $RPM_BUILD_ROOT%{mingw64_prefix}/lib/*.dll $RPM_BUILD_ROOT%{mingw64_prefix}/bin/
-cp lib/dll/libzstd.lib $RPM_BUILD_ROOT%{mingw64_prefix}/lib/libzstd.dll.a
-rm $RPM_BUILD_ROOT%{mingw64_prefix}/lib/libzstd.so $RPM_BUILD_ROOT%{mingw64_prefix}/lib/libzstd.so.1
-popd
+%files -n mingw32-%{pkgname}
+%license COPYING
+%{mingw32_bindir}/lib%{pkgname}.dll
+%{mingw32_libdir}/lib%{pkgname}.dll.a
+%{mingw32_libdir}/cmake/%{pkgname}/
+%{mingw32_libdir}/pkgconfig/lib%{pkgname}.pc
+%{mingw32_includedir}/%{pkgname}/
 
-%files -n mingw32-libzstd
-%{mingw32_bindir}/*.dll
-%{mingw32_libdir}/*.dll.a
-%{mingw32_libdir}/pkgconfig/*.pc
-%{mingw32_includedir}/*.h
-
-%files -n mingw32-libzstd-static
+%files -n mingw32-%{pkgname}-static
 %{mingw32_libdir}/*.a
 %exclude %{mingw32_libdir}/*.dll.a
 
-%files -n mingw64-libzstd
-%{mingw64_bindir}/*.dll
-%{mingw64_libdir}/*.dll.a
-%{mingw64_libdir}/pkgconfig/*.pc
-%{mingw64_includedir}/*.h
+%files -n mingw64-%{pkgname}
+%license COPYING
+%{mingw64_bindir}/lib%{pkgname}.dll
+%{mingw64_libdir}/lib%{pkgname}.dll.a
+%{mingw64_libdir}/cmake/%{pkgname}/
+%{mingw64_libdir}/pkgconfig/lib%{pkgname}.pc
+%{mingw64_includedir}/%{pkgname}/
 
-%files -n mingw64-libzstd-static
+%files -n mingw64-%{pkgname}-static
 %{mingw64_libdir}/*.a
 %exclude %{mingw64_libdir}/*.dll.a
+
+%changelog
+* Thu Jan 25 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.5-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
+* Sun Jan 21 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.5-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
+* Thu Jul 20 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.5-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_39_Mass_Rebuild
+
+* Thu Apr 06 2023 Sandro Mani <manisandro@gmail.com> - 1.5.5-1
+- Update to 1.5.5
+
+* Wed Feb 15 2023 Sandro Mani <manisandro@gmail.com> - 1.5.4-1
+- Update to 1.5.4
+
+* Thu Jan 19 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.2-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_38_Mass_Rebuild
+
+* Thu Jul 21 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.2-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
+
+* Fri Mar 25 2022 Sandro Mani <manisandro@gmail.com> - 1.5.2-2
+- Rebuild with mingw-gcc-12
+
+* Tue Jan 25 2022 Sandro Mani <manisandro@gmail.com> - 1.5.2-1
+- Update to 1.5.2
+
+* Thu Jan 20 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
+
+* Thu Dec 23 2021 Sandro Mani <manisandro@gmail.com> - 1.5.1-1
+- Update to 1.5.1
+
+* Thu Jul 22 2021 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_35_Mass_Rebuild
+
+* Mon May 17 2021 Sandro Mani <manisandro@gmail.com> - 1.5.0-1
+- Update to 1.5.0
+
+* Fri Mar 05 2021 Sandro Mani <manisandro@gmail.com> - 1.4.9-1
+- Update to 1.4.9
+
+* Tue Jan 26 2021 Fedora Release Engineering <releng@fedoraproject.org> - 1.4.8-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_34_Mass_Rebuild
+
+* Wed Dec 30 2020 Sandro Mani <manisandro@gmail.com> - 1.4.8-1
+- Update to 1.4.8
+
+* Thu Nov 12 2020 Sandro Mani <manisandro@gmail.com> - 1.4.5-2
+- Fix source URL
+- Fix license tag
+
+* Thu Nov 12 2020 Sandro Mani <manisandro@gmail.com> - 1.4.5-1
+- Initial package
